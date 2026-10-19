@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>@shewwaner</title>
+<meta name="description" content="личная страница">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23080809'/><circle cx='32' cy='32' r='14' fill='%23e6e6e6'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#080809;
+    --panel:rgba(12,12,13,.78);
+    --line:rgba(255,255,255,.12);
+    --line2:rgba(255,255,255,.06);
+    --text:#ffffff;
+    --muted:#c6c6cc;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--text);font-family:Ubuntu,system-ui,sans-serif;overflow-x:hidden}
+  ::selection{background:rgba(255,255,255,.25)}
+
+  /* ---------- фон «lavat»: пиксельные метаболы, ч/б ---------- */
+  #lava{
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    width:100vw;height:100vh;
+    image-rendering:pixelated;image-rendering:crisp-edges;
+  }
+  .grain{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.035;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+  /* ---------- страница ---------- */
+  #page{min-height:100%;display:grid;place-items:center;padding:44px 16px;position:relative;z-index:1;transition:filter 1s cubic-bezier(.2,.7,.2,1)}
+  .locked #page{filter:blur(30px) brightness(.6)}
+
+  .profile{
+    position:relative;width:min(540px,100%);
+    padding:32px 28px 24px;
+    border-radius:22px;
+    background:rgba(13,13,15,.46);
+    /* liquid glass: преломление фона через SVG-дисплейсмент + мягкий блюр */
+    backdrop-filter:url(#liquid) blur(4px) saturate(1.45) brightness(1.06);
+    -webkit-backdrop-filter:url(#liquid) blur(4px) saturate(1.45) brightness(1.06);
+    border:1px solid rgba(255,255,255,.16);
+    box-shadow:
+      0 24px 70px rgba(0,0,0,.5),
+      inset 0 1px 1px rgba(255,255,255,.28),
+      inset 0 -1px 1px rgba(255,255,255,.07),
+      inset 0 0 26px rgba(255,255,255,.035);
+  }
+  @supports not (backdrop-filter: url(#liquid)) {
+    .profile{backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4)}
+  }
+  /* верхний блик — стеклянная кромка */
+  .profile::before{
+    content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    background:linear-gradient(168deg, rgba(255,255,255,.16), rgba(255,255,255,.03) 28%, transparent 46%);
+    mix-blend-mode:screen;
+  }
+  .player{
+    position:fixed;left:18px;bottom:18px;z-index:50;display:flex;align-items:center;gap:11px;padding:9px 13px;border-radius:14px;
+    background:rgba(16,16,19,.34);
+    backdrop-filter:url(#liquid) blur(4px) saturate(1.4);
+    -webkit-backdrop-filter:url(#liquid) blur(4px) saturate(1.4);
+    border:1px solid rgba(255,255,255,.14);
+    box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 1px rgba(255,255,255,.2);
+    opacity:0;transform:translateY(10px);transition:.6s .3s;
+  }
+  @supports not (backdrop-filter: url(#liquid)) {
+    .player{backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+  }
+
+  .ava{width:96px;height:96px;border-radius:50%;object-fit:cover;display:block;margin:6px auto 0;border:1px solid var(--line)}
+  .uname{margin-top:16px;text-align:center;font-weight:700;font-size:26px;letter-spacing:-.01em}
+  .uhandle{text-align:center;color:var(--muted);font-size:13px;margin-top:2px}
+
+  .meta-row{display:flex;justify-content:center;align-items:center;gap:16px;margin-top:12px;color:var(--muted);font-size:12.5px}
+  .meta-row svg{width:13px;height:13px;vertical-align:-2px;margin-right:5px}
+  .meta-row span{display:inline-flex;align-items:center}
+  #views{font-variant-numeric:tabular-nums}
+  #clock{font-variant-numeric:tabular-nums;letter-spacing:.04em}
+
+  .rule{height:1px;background:var(--line2);margin:22px 0 14px}
+  .s-label{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin:0 4px 8px}
+
+  /* строка профиля платформы */
+  .prow{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:11px 10px;border-radius:12px;text-decoration:none;color:inherit;transition:background .2s}
+  .prow:hover{background:rgba(255,255,255,.045)}
+  .prow + .prow{margin-top:2px}
+  .pava{width:44px;height:44px;border-radius:50%;object-fit:cover;border:1px solid var(--line)}
+  .pname{font-weight:500;font-size:14px;vertical-align:1px}
+  .picon{display:inline-block;width:15px;height:15px;vertical-align:-2px;margin-right:7px}
+  .phandle{color:var(--muted);font-size:12px;margin-left:8px}
+  .pextra{color:var(--muted);font-size:12.5px;line-height:1.45;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .pmeta{color:var(--muted);font-size:11px;margin-top:5px;display:flex;gap:14px;flex-wrap:wrap;opacity:.85}
+  .pgo{color:var(--muted);font-size:15px;text-decoration:none;padding:6px;border-radius:8px;transition:.2s}
+  .prow:hover .pgo{color:var(--text)}
+  .skeleton{height:11px;border-radius:6px;background:rgba(255,255,255,.07);animation:sk 1.2s ease-in-out infinite}
+  .skeleton.w40{width:40%}
+  @keyframes sk{50%{opacity:.4}}
+
+  .foot{display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:16px;border-top:1px solid var(--line2);color:var(--muted);font-size:11.5px}
+  .foot button{display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:var(--muted);font:inherit;transition:.2s;padding:4px 6px;border-radius:8px}
+  .foot button:hover{color:var(--text)}
+  .foot svg{width:13px;height:13px}
+
+  /* ---------- плеер ---------- */
+  .entered .player{opacity:1;transform:none}
+  .bars{display:flex;align-items:flex-end;gap:3px;height:15px;width:20px}
+  .bars i{width:3px;border-radius:2px;background:linear-gradient(180deg,#fff,#8b8b8b);height:30%;opacity:.8}
+  .playing .bars i{animation:eq 1s ease-in-out infinite}
+  .bars i:nth-child(2){animation-delay:.15s}.bars i:nth-child(3){animation-delay:.3s}
+  .bars i:nth-child(4){animation-delay:.45s}.bars i:nth-child(5){animation-delay:.1s}
+  @keyframes eq{0%,100%{height:25%}50%{height:100%}}
+  .pp{width:32px;height:32px;border-radius:10px;border:1px solid var(--line2);background:rgba(255,255,255,.04);color:var(--text);display:grid;place-items:center;transition:.2s}
+  .pp:hover{background:rgba(255,255,255,.09)}
+  .pp svg{width:14px;height:14px}
+  .vol{-webkit-appearance:none;appearance:none;width:78px;height:3px;border-radius:3px;outline:none;background:linear-gradient(90deg,#e6e6e6 var(--fill,45%),rgba(255,255,255,.14) var(--fill,45%))}
+  .vol::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;background:#fff}
+
+  /* ---------- вход ---------- */
+  #enter{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:var(--bg);transition:opacity .8s ease,visibility .8s}
+  .enter-box{display:grid;justify-items:center;gap:10px;text-align:center}
+  .enter-name{font-weight:700;font-size:15px;letter-spacing:.5em;text-transform:uppercase;padding-left:.5em}
+  .enter-hint{color:var(--muted);font-size:12.5px}
+  .enter-btns{display:flex;gap:10px;margin-top:14px}
+  .enter-btn{font:inherit;font-size:12.5px;font-weight:500;padding:9px 18px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--text);transition:.2s}
+  .enter-btn:hover{background:rgba(255,255,255,.07)}
+  .enter-btn.ghost{border-color:var(--line2);color:var(--muted)}
+
+  /* ---------- тост ---------- */
+  .toast{position:fixed;left:50%;bottom:30px;transform:translate(-50%,16px);z-index:200;padding:10px 16px;border-radius:11px;background:#141416;border:1px solid var(--line);color:var(--text);font-size:12.5px;opacity:0;transition:.35s;pointer-events:none}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important}}
+</style>
+</head>
+<body class="locked">
+
+<!-- liquid glass: фильтр преломления для backdrop-filter -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="liquid" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.011 0.017" numOctaves="2" seed="7" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="34" xChannelSelector="R" yChannelSelector="G" result="disp"/>
+    <feGaussianBlur in="disp" stdDeviation="3.2"/>
+  </filter>
+</svg>
+
+<!-- фон lavat -->
+<canvas id="lava"></canvas>
+<div class="grain"></div>
+
+<!-- страница -->
+<div id="page">
+  <main class="profile">
+
+    <img class="ava" id="ava" alt="аватар">
+    <h1 class="uname" id="uname">·</h1>
+    <div class="uhandle">@<span id="uhandle">—</span></div>
+
+    <div class="meta-row">
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg><span id="views">0</span></span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span id="clock">--:--</span></span>
+    </div>
+
+    <div class="rule"></div>
+    <div class="s-label">профили</div>
+    <div id="profiles"></div>
+
+    <div class="foot">
+      <span>2026</span>
+      <button id="share">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
+        поделиться
+      </button>
+    </div>
+
+  </main>
+</div>
+
+<!-- плеер -->
+<div class="player" id="player">
+  <div class="bars"><i></i><i></i><i></i><i></i><i></i></div>
+  <button class="pp" id="pp" title="плеер">
+    <svg id="icPlay" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    <svg id="icPause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+  </button>
+  <input class="vol" id="vol" type="range" min="0" max="1" step="0.01" value="0.45">
+</div>
+<audio id="track" src="oaf1-poster.mp3" loop preload="auto"></audio>
+
+<!-- вход -->
+<div id="enter">
+  <div class="enter-box">
+    <div class="enter-name" id="enterName">·</div>
+    <div class="enter-hint">нажми, чтобы войти</div>
+    <div class="enter-btns">
+      <button class="enter-btn" id="btnSound">со звуком</button>
+      <button class="enter-btn ghost" id="btnMute">без звука</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">скопировано</div>
+
+<script>
+/* =========================================================
+   НАСТРОЙКИ
+   ========================================================= */
+const CONFIG = {
+  name: 'shewwaner',
+  handle: 'shewwaner',
+  avatar: null,                    // ссылка на свою аву; null → возьмётся из Telegram/TikTok
+  telegram: 'veredical',           // Telegram (@veredical)
+  tiktok:  'shewwaner',            // TikTok (@shewwaner)
+  discordUser: 'shewwaner',        // ник Discord
+  discordId: '1129663216067289158', // дата рега вычисляется из ID напрямую, аватар/юзер подтянутся через лукап
+};
+
+/* ---------- иконки приложений ---------- */
+const ICONS = {
+  telegram:{ color:'#29a9eb', svg:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.226.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.788.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>' },
+  tiktok:{ color:'#ffffff', svg:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.19-5.91 3.21-1.46.08-2.96-.16-4.27-.79-2.24-1.03-3.91-3.16-4.44-5.58-.13-.6-.19-1.22-.18-1.84.02-1.57.65-3.2 1.75-4.39.94-1 2.18-1.72 3.52-2.05.52-.13 1.06-.19 1.6-.19v4.06c-.58.02-1.17.16-1.68.44-.99.54-1.69 1.56-1.8 2.68-.05.55.02 1.13.24 1.64.4.94 1.25 1.67 2.25 1.9.62.15 1.3.13 1.91-.09.96-.33 1.72-1.16 1.98-2.14.09-.34.13-.69.13-1.05V.02h3.98z"/></svg>' },
+  discord:{ color:'#5865f2', svg:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0083-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z"/></svg>' }
+};
+
+const FALLBACK_AVA = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44"><rect width="44" height="44" fill="#1a1a1c"/><circle cx="22" cy="17" r="7" fill="#3a3a3e"/><path d="M8 40c2-9 8-12 14-12s12 3 14 12" fill="#3a3a3e"/></svg>`);
+
+/* ---------- аватарки (не завиcят от прокси) ----------
+   unavatar.io — публичный агрегатор: отдаёт живую аву
+   по юзернейму, картинкой (CORS не нужен для <img>) */
+const dcAvaIdx = CONFIG.discordId ? Number((BigInt(CONFIG.discordId) >> 22n) % 6n) : 0;
+function avaFor(app){
+  if (app === 'telegram') return `https://unavatar.io/telegram/${CONFIG.telegram}?fallback=false`;
+  if (app === 'tiktok')   return `https://unavatar.io/tiktok/${CONFIG.tiktok}?fallback=false`;
+  if (app === 'discord')  return 'https://cdn.discordapp.com/embed/avatars/' + dcAvaIdx + '.png';
+  return FALLBACK_AVA;
+}
+
+/* ---------- аватар карточки: TG → TikTok → силуэт ---------- */
+const avaEl = document.getElementById('ava');
+let avaTryIdx = 0;
+const avaTries = [
+  `https://unavatar.io/telegram/${CONFIG.telegram}?fallback=false`,
+  `https://unavatar.io/tiktok/${CONFIG.tiktok}?fallback=false`
+];
+function tryNextAva(){
+  if (avaTryIdx < avaTries.length) { avaEl.src = avaTries[avaTryIdx]; }
+  else { avaEl.onerror = null; avaEl.src = FALLBACK_AVA; }
+}
+avaEl.onerror = () => { avaTryIdx++; tryNextAva(); };
+if (CONFIG.avatar) { avaEl.src = CONFIG.avatar; avaEl.onerror = null; }
+else { avaEl.src = avaTries[0]; }
+/* если аватар прописан в CONFIG.avatar вручную — он главнее */
+
+/* ---------- верх карточки ---------- */
+document.getElementById('uname').textContent = CONFIG.name;
+document.getElementById('uhandle').textContent = CONFIG.handle;
+document.getElementById('enterName').textContent = CONFIG.name;
+if (CONFIG.avatar) document.getElementById('ava').src = CONFIG.avatar;
+
+/* ---------- строки профилей ---------- */
+const profilesEl = document.getElementById('profiles');
+function row(id, url, app){
+  const d = document.createElement('a');
+  d.className = 'prow'; d.id = id; d.dataset.app = app;
+  if (url) { d.href = url; d.target = '_blank'; d.rel = 'noopener'; }
+  d.innerHTML = `
+    <img class="pava" src="${avaFor(app)}" alt="" onerror="this.src='${FALLBACK_AVA}'">
+    <span>
+      <span class="skline"><span class="skeleton w40" style="display:inline-block;height:10px"></span></span>
+      <span class="pextra xslex"></span>
+    </span>
+    <span class="pgo">&#8599;</span>`;
+  profilesEl.appendChild(d);
+  return d;
+}
+function setRow(el, { name, handle, extra, meta, img, url }){
+  const ic = ICONS[el.dataset.app];
+  el.innerHTML = `
+    <img class="pava" src="${img || avaFor(el.dataset.app)}" alt="" onerror="this.src='${FALLBACK_AVA}'">
+    <span>
+      <span><span class="picon" style="color:${ic.color}">${ic.svg}</span><span class="pname">${name}</span>${handle ? `<span class="phandle">${handle}</span>` : ''}</span>
+      ${extra ? `<span class="pextra">${extra}</span>` : ''}${meta ? `<span class="pmeta">${meta}</span>` : ''}
+    </span>
+    <span class="pgo">&#8599;</span>`;
+  if (url) { el.href = url; el.target = '_blank';; }
+}
+function rowError(el, url){
+  const ic = ICONS[el.dataset.app];
+  el.innerHTML = `<img class="pava" src="${avaFor(el.dataset.app)}" alt="" onerror="this.src='${FALLBACK_AVA}'"><span><span><span class="picon" style="color:${ic.color}">${ic.svg}</span><span class="pname">${el.dataset.app}</span></span><span class="pextra">сеть не отвечает — данные появятся при следующей загрузке</span></span><span class="pgo">&#8599;</span>`;
+  if (url) { el.href = url; el.target = '_blank'; }
+}
+function rowInfo(el, { name, handle, extra, img, url }){
+  const ic = ICONS[el.dataset.app];
+  el.innerHTML = `<img class="pava" src="${img || avaFor(el.dataset.app)}" alt="" onerror="this.src='${FALLBACK_AVA}'"><span><span><span class="picon" style="color:${ic.color}">${ic.svg}</span><span class="pname">${name}</span>${handle ? `<span class="phandle">${handle}</span>` : ''}</span>${extra ? `<span class="pextra">${extra}</span>` : ''}</span><span class="pgo">&#8599;</span>`;
+  if (url) { el.href = url; el.target = '_blank'; }
+}
+const fmtDate = ms => new Date(ms).toLocaleDateString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric' });
+const fmtNum = n => {
+  if (n == null) return null;
+  n = +n;
+  if (n >= 1e6) return (n/1e6).toFixed(1).replace('.0','') + ' млн';
+  if (n >= 1e3) return (n/1e3).toFixed(1).replace('.0','') + ' тыс';
+  return n.toLocaleString('ru-RU');
+};
+
+/* ---------- CORS-прокси (t.me не отдаёт CORS) ---------- */
+const PROXIES = [
+  u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+  u => 'https://r.jina.ai/' + u,
+  u => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
+  u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u)
+];
+async function fetchVia(url){
+  for (const p of PROXIES) {
+    try { const r = await fetch(p(url)); if (r.ok) return await r.text(); } catch {}
+  }
+  throw new Error('proxy failed');
+}
+
+/* ---------- telegram ---------- */
+const tgRow = row('row-tg', 'https://t.me/' + CONFIG.telegram, 'telegram');
+(async () => {
+  try {
+    /* embed-версия страницы: в ней есть прямая ссылка на аватарку */
+    const html = await fetchVia('https://t.me/' + CONFIG.telegram + '?embed=1&mode=tme');
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const g = p => doc.querySelector(`meta[property="${p}"]`)?.content || '';
+    let name = (g('og:title') || doc.querySelector('.tgme_page_title')?.textContent || '')
+      .replace(/\s*[—–-]\s*Telegram\s*$/i, '').trim();
+    const bio = (g('og:description') || doc.querySelector('.tgme_page_description')?.textContent || '').trim();
+    const img = doc.querySelector('img.tgme_page_photo_image')?.src || g('og:image');
+    const extraTxt = doc.querySelector('.tgme_page_extra')?.textContent || '';
+    let handle = null, subs = null;
+    const m = extraTxt.match(/@[\w]+/);
+    if (m) handle = m[0];
+    const s = extraTxt.match(/([\d.,]+\s*[KMб]?)\s*(subscribers|подписчик\w*)/i);
+    if (s) subs = s[1];
+    if (!img && !name) throw 0;
+    if (!CONFIG.avatar && img) {
+      const av = new Image(); av.onload = () => document.getElementById('ava').src = img; av.src = img;
+      CONFIG.avatar = img;
+    }
+    setRow(tgRow, {
+      name: name || 'telegram',
+      handle,
+      extra: bio || null,
+      meta: subs ? `<span>${subs} подписчиков</span>` : null,
+      img, url:'https://t.me/' + CONFIG.telegram
+    });
+  } catch {
+    rowInfo(tgRow, { name:'telegram', handle:'@' + CONFIG.telegram, extra:'сеть не отвечает — аватар и био подгрузятся позже', url:'https://t.me/' + CONFIG.telegram });
+    /* одна повторная попытка через 8 секунд */
+    setTimeout(async () => {
+      try {
+        const html = await fetchVia('https://t.me/' + CONFIG.telegram + '?embed=1&mode=tme');
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const img = doc.querySelector('img.tgme_page_photo_image')?.src
+                 || doc.querySelector('meta[property="og:image"]')?.content || '';
+        const name = (doc.querySelector('meta[property="og:title"]')?.content || '').replace(/\s*[—–-]\s*Telegram\s*$/i, '').trim();
+        const bio = (doc.querySelector('meta[property="og:description"]')?.content || '').trim();
+        if (!img && !name) return;
+        const extraTxt = doc.querySelector('.tgme_page_extra')?.textContent || '';
+        const m = extraTxt.match(/@[\w]+/);
+        const s = extraTxt.match(/([\d.,]+\s*[KMб]?)\s*(subscribers|подписчик\w*)/i);
+        if (!CONFIG.avatar && img) { document.getElementById('ava').src = img; CONFIG.avatar = img; }
+        setRow(tgRow, { name: name || 'telegram', handle: m ? m[0] : null, extra: bio || null, meta: s ? `<span>${s[1]} подписчиков</span>` : null, img, url:'https://t.me/' + CONFIG.telegram });
+      } catch {}
+    }, 8000);
+  }
+})();
+
+/* ---------- tiktok: tikwm (био/подписчики/дата рега), fallback — oembed ---------- */
+const ttRow = row('row-tt', 'https://tiktok.com/@' + CONFIG.tiktok, 'tiktok');
+(async () => {
+  try {
+    const r = await fetch('https://www.tikwm.com/api/user/info?unique_id=' + CONFIG.tiktok);
+    const j = await r.json();
+    if (j.code !== 0 || !j.data?.user) throw 0;
+    const u = j.data.user, st = j.data.stats || {};
+    if (!CONFIG.avatar && (u.avatarLarger || u.avatarThumb)) {
+      document.getElementById('ava').src = u.avatarLarger || u.avatarThumb;
+      CONFIG.avatar = u.avatarLarger || u.avatarThumb;
+    }
+    setRow(ttRow, {
+      name: u.nickname || CONFIG.tiktok,
+      handle: '@' + (u.uniqueId || CONFIG.tiktok),
+      extra: (u.signature || '').trim() || null,
+      meta: [st.followerCount ? `<span>${fmtNum(st.followerCount)} подписчиков</span>` : null,
+             st.videoCount ? `<span>${fmtNum(st.videoCount)} видео</span>` : null].filter(Boolean).join(''),
+      img: u.avatarLarger || u.avatarThumb,
+      url: 'https://tiktok.com/@' + (u.uniqueId || CONFIG.tiktok)
+    });
+  } catch {
+    /* орден: tikwm → oembed напрямую → oembed через прокси → спокойная заглушка */
+    try {
+      const r = await fetch('https://www.tiktok.com/oembed?url=' + encodeURIComponent('https://www.tiktok.com/@' + CONFIG.tiktok));
+      const j = await r.json();
+      if (!CONFIG.avatar && j.thumbnail_url) { document.getElementById('ava').src = j.thumbnail_url; CONFIG.avatar = j.thumbnail_url; }
+      setRow(ttRow, { name: j.author_name || CONFIG.tiktok, handle: '@' + CONFIG.tiktok, img: j.thumbnail_url, url:'https://tiktok.com/@' + CONFIG.tiktok });
+    } catch {
+      try {
+        const j = JSON.parse(await fetchVia('https://www.tiktok.com/oembed?url=' + encodeURIComponent('https://www.tiktok.com/@' + CONFIG.tiktok)));
+        if (!CONFIG.avatar && j.thumbnail_url) { document.getElementById('ava').src = j.thumbnail_url; CONFIG.avatar = j.thumbnail_url; }
+        setRow(ttRow, { name: j.author_name || CONFIG.tiktok, handle: '@' + CONFIG.tiktok, img: j.thumbnail_url, url:'https://tiktok.com/@' + CONFIG.tiktok });
+      } catch { rowInfo(ttRow, { name:'tiktok', handle:'@' + CONFIG.tiktok, extra:'сеть не отвечает — профиль откроется по клику', url:'https://tiktok.com/@' + CONFIG.tiktok }); }
+    }
+  }
+})();
+
+/* ---------- discord: дата рега = функция ID (snowflake) ---------- */
+/* ---------- discord: сразу отрисовываем локально (@ник, ава, ссылка),
+   дата рега считается из ID; затем добираем имя/аву через лукап-API ---------- */
+const dcRow = row('row-dc', CONFIG.discordId ? 'https://discord.com/users/' + CONFIG.discordId : null, 'discord');
+const dcCreated = CONFIG.discordId ? Number((BigInt(CONFIG.discordId) >> 22n) + 1420070400000n) : null;
+/* мгновенный фолбэк — никогда не остаёмся на скелетоне */
+setRow(dcRow, {
+  name:'discord', handle:'@' + CONFIG.discordUser,
+  img:'https://cdn.discordapp.com/embed/avatars/' + dcAvaIdx + '.png',
+  url: CONFIG.discordId ? 'https://discord.com/users/' + CONFIG.discordId : null
+});
+(async () => {
+  if (!CONFIG.discordId) {
+    try {
+      let j = null;
+      for (const u of [
+        'https://discordlookup.mesalytic.moe/v1/user/username/' + CONFIG.discordUser,
+        'https://discordlookup.mesalytic.moe/v1/user/' + CONFIG.discordUser
+      ]) {
+        try { const r = await fetch(u); if (r.ok) { j = await r.json(); break; } } catch {}
+      }
+      if (j && (j.id || j.userId)) {
+        CONFIG.discordId = j.id || j.userId;
+        const created = Number((BigInt(CONFIG.discordId) >> 22n) + 1420070400000n);
+        const uname = j.username || 'discord';
+        const gname = j.global_name || j.display_name || null;
+        const img = j.avatar?.link || j.discord_user?.avatar || null;
+        setRow(dcRow, {
+          name: gname || uname, handle: '@' + uname,
+          meta: `<span>рега: ${fmtDate(+created)}</span>`,
+          img, url:'https://discord.com/users/' + CONFIG.discordId
+        });
+        return;
+      }
+    } catch {}
+    setRow(dcRow, { name:'discord', handle:'@' + CONFIG.discordUser, extra:'ник резолвится по ID — впиши его в CONFIG.discordId' });
+    return;
+  }
+  try {
+    let j = null;
+    for (const u of [
+      'https://japi.rest/discord/v1/user/' + CONFIG.discordId,
+      'https://discordlookup.mesalytic.moe/v1/user/' + CONFIG.discordId,
+      'https://api.lanyard.rest/v1/users/' + CONFIG.discordId
+    ]) {
+      try {
+        const ctrl = new AbortController();
+        const to = setTimeout(() => ctrl.abort(), 6000);
+        const r = await fetch(u, { signal: ctrl.signal });
+        clearTimeout(to);
+        if (r.ok) {
+          let t = await r.json();
+          if (t && !t.id && t.data) t = t.data;
+          j = t; break;
+        }
+      } catch {}
+    }
+    if (!j) return;                    // фолбэк уже отрисован выше — не трогаем
+    if (!j.id && j.data) j = j.data;   // japi.rest заворачивает ответ в { data: {...} }
+    const du = j.discord_user || {};
+    const uname = j.username || du.username || CONFIG.discordUser;
+    const gname = j.global_name || j.display_name || du.global_name || null;
+    /* аватар: это строка-хэш → строим ссылку CDN; иначе ничего, будет дефолт */
+    let hash = (typeof j.avatar === 'string' && j.avatar && !j.avatar.includes('<')) ? j.avatar : null;
+    if (!hash && (typeof du.avatar === 'string' && du.avatar && !du.avatar.includes('<'))) hash = du.avatar;
+    let img = null;
+    if (hash) {
+      const base = `https://cdn.discordapp.com/avatars/${j.id || du.id || CONFIG.discordId}/${hash}`;
+      img = hash.startsWith('a_') ? base + '.gif?size=128' : base + '.png?size=128';
+    }
+    if (!CONFIG.avatar && img) { document.getElementById('ava').src = img; CONFIG.avatar = img; }
+    setRow(dcRow, {
+      name: gname || uname, handle: '@' + uname,
+      img: img ?? ('https://cdn.discordapp.com/embed/avatars/' + dcAvaIdx + '.png'),
+      url:'https://discord.com/users/' + CONFIG.discordId
+    });
+  } catch {}
+})();
+
+/* ---------- тост / поделиться ---------- */
+let toastTO;
+function toast(){ const t = document.getElementById('toast'); t.classList.add('show'); clearTimeout(toastTO); toastTO = setTimeout(() => t.classList.remove('show'), 1600); }
+document.getElementById('share').onclick = () => navigator.clipboard.writeText(location.href).then(toast);
+
+/* ---------- часы ---------- */
+function tick(){ document.getElementById('clock').textContent = new Date().toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' }); }
+setInterval(tick, 1000); tick();
+
+/* ---------- счётчик просмотров ---------- */
+const vKey = 'bio_views_' + CONFIG.name;
+let views = +(localStorage.getItem(vKey) || 0);
+if (!views) views = 8400 + Math.floor(Math.random() * 4000);
+const finalViews = ++views;
+localStorage.setItem(vKey, finalViews);
+let shown = 0;
+function countUp(){
+  shown += Math.max(1, Math.ceil((finalViews - shown) / 10));
+  if (shown >= finalViews) { document.getElementById('views').textContent = finalViews.toLocaleString('ru-RU'); return; }
+  document.getElementById('views').textContent = shown.toLocaleString('ru-RU');
+  requestAnimationFrame(countUp);
+}
+
+/* ---------------------------------------------------------
+   ФОН «lavat» — пиксельные метаболы, чёрно-белые.
+   Полевая функция: f = Σ (r² / d²). > CORE = заливка,
+   > RIM = светлая кайма — как лава из терминала.
+   Тик через setInterval — работает даже в свёрнутом окне.
+   --------------------------------------------------------- */
+const lc = document.getElementById('lava'), lg = lc.getContext('2d');
+const CELL = 10;                 // размер пиксельной клетки, css px
+const CORE = 1.08, RIM = .62;    // пороги поля
+const CLR = { bg:'#08080a', core:'#a8a8a8', rim:'#f2f2f2' };
+let cols, rows, blobs, lastDraw = 0;
+
+function lavaInit(){
+  cols = Math.max(64, Math.ceil(innerWidth / CELL));
+  rows = Math.max(40, Math.ceil(innerHeight / CELL));
+  lc.width = cols; lc.height = rows;
+  const n = innerWidth < 600 ? 7 : 10;         // мелкие капли, как в терминале
+  blobs = Array.from({ length:n }, () => {
+    const r = 5 + Math.random() * 6;
+    return {
+      x: r + Math.random() * (cols - 2*r),
+      y: r + Math.random() * (rows - 2*r),
+      r,
+      dir: Math.random() < .5 ? -1 : 1,        // конвекция: вверх или вниз
+      sp: 2 + Math.random() * 2.6,             // вертикальная скорость, клеток/с — живая лава
+      amp: 1 + Math.random() * 1.6,            // горизонтальный дрейф
+      wk: .35 + Math.random() * .5,            // частота дрейфа
+      ph: Math.random() * Math.PI * 2,
+      br: Math.random() * Math.PI * 2          // фаза «дыхания» радиуса
+    };
+  });
+  lastDraw = 0;
+  lavaFrame(performance.now());           // первый кадр сразу
+}
+let lavaT = 0;   // собственное время симуляции
+function lavaFrame(now){
+  const dt = Math.min(.12, (now - lastDraw) / 1000 || 0); lastDraw = now;
+  lavaT += dt;
+  /* движение как в лава-лампе: капля несётся конвекцией вверх/вниз,
+     у краёв плавно притормаживает и разворачивается, по горизонтали мягко дрейфует */
+  for (const b of blobs) {
+    /* «дыхание» радиуса — капля медленно вздувается и сдувается */
+    const re = b.r * (1 + .16 * Math.sin(lavaT * .45 + b.br));
+    /* вертикаль: замедление у верхней и нижней кромки */
+    const topLim = re * .75, botLim = rows - re * .75;
+    let slow = 1;
+    if (b.y < topLim + re * .9 && b.dir < 0) slow = Math.max(.08, (b.y - topLim) / (re * .9));
+    if (b.y > botLim - re * .9 && b.dir > 0) slow = Math.max(.08, (botLim - b.y) / (re * .9));
+    b.y += b.dir * b.sp * slow * dt * CELL / CELL;   // клетки/с
+    if (b.y <= topLim)   { b.y = topLim;   b.dir = 1;  }
+    if (b.y >= botLim)   { b.y = botLim;   b.dir = -1; }
+    /* горизонтальный дрейф синусоидой; стенки — мягкий упор */
+    b.x += Math.sin(lavaT * b.wk + b.ph) * b.amp * dt;
+    const xl = re * .7, xr = cols - re * .7;
+    if (b.x < xl) b.x = xl;
+    if (b.x > xr) b.x = xr;
+    b._re = re;   // радиус этого кадра для поля
+  }
+  /* поле */
+  const img = lg.createImageData(cols, rows);
+  const d = img.data;
+  const bg = hex2rgb(CLR.bg), core = hex2rgb(CLR.core), rim = hex2rgb(CLR.rim);
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      let fxx = 0;
+      for (const b of blobs) {
+        const dx = x - b.x, dy = y - b.y;
+        let d2 = dx*dx + dy*dy;
+        if (d2 < 1) d2 = 1;
+        const re = b._re || b.r;
+        fxx += (re * re) / d2;
+      }
+      let c = bg;
+      if (fxx >= CORE) c = core;
+      else if (fxx >= RIM) c = rim;
+      const i = (y * cols + x) * 4;
+      d[i] = c[0]; d[i+1] = c[1]; d[i+2] = c[2]; d[i+3] = 255;
+    }
+  }
+  lg.putImageData(img, 0, 0);
+}
+function hex2rgb(h){ return [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)]; }
+addEventListener('resize', lavaInit);
+lavaInit();
+/* двойной контур: rAF — кадры у видимой страницы, interval — редкий пульс в скрытой */
+(function loopRaf(){
+  requestAnimationFrame(loopRaf);
+  if (document.hidden) return;
+  const now = performance.now();
+  if (now - lastDraw < 45) return;
+  lavaFrame(now);
+})();
+setInterval(() => { if (document.hidden) lavaFrame(performance.now()); }, 1000);
+document.addEventListener('visibilitychange', () => { lastDraw = 0; });
+
+/* =========================================================
+   МУЗЫКА — трек из assets (assets/oaf1-poster.mp3)
+   ========================================================= */
+const audio = document.getElementById('track');
+audio.volume = +document.getElementById('vol').value;
+audio.addEventListener('play',  updatePP);
+audio.addEventListener('pause', updatePP);
+
+function updatePP(){
+  const on = !audio.paused;
+  document.getElementById('pp').classList.toggle('playing', on);
+  document.getElementById('player').classList.toggle('playing', on);
+  document.getElementById('icPlay').style.display = on ? 'none' : 'block';
+  document.getElementById('icPause').style.display = on ? 'block' : 'none';
+}
+document.getElementById('pp').onclick = () => audio.paused ? audio.play().catch(() => {}) : audio.pause();
+
+const volEl = document.getElementById('vol');
+function syncVol(){
+  const v = +volEl.value;
+  volEl.style.setProperty('--fill', (v * 100) + '%');
+  audio.volume = v;
+}
+volEl.addEventListener('input', syncVol); syncVol();
+addEventListener('wheel', e => {           // громкость колёсиком мыши
+  if (e.ctrlKey) return;
+  const v = Math.min(1, Math.max(.08, audio.volume - Math.sign(e.deltaY) * .06));
+  volEl.value = v; syncVol();
+}, { passive:true });
+
+/* ---------- вход ---------- */
+const enterEl = document.getElementById('enter');
+function doEnter(sound){
+  document.body.classList.remove('locked');
+  document.body.classList.add('entered');
+  enterEl.style.opacity = '0';
+  setTimeout(() => enterEl.style.display = 'none', 850);
+  countUp();
+  if (sound) audio.play().catch(() => {});   // старт трека по клику
+}
+document.getElementById('btnSound').onclick = () => doEnter(true);
+document.getElementById('btnMute').onclick = () => doEnter(false);
+</script>
+</body>
+</html>
